@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-slate-100 text-slate-800 m-0;
+    font-family: 'Pretendard', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  #root {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    text-align: left;
+    border: none;
+    min-height: 100svh;
+    display: block;
+  }
+}
+
+/* Leaflet overrides — light mode default */
+.leaflet-container {
+  background: #EFF6FF !important;
+  border-radius: 0.75rem;
+}
+
+.leaflet-tile {
+  filter: none;
+}
+
+/* Dark mode only when .dark class is explicitly applied */
+.dark body {
+  background-color: #030712;
+  color: #f1f5f9;
+}
+
+.dark .leaflet-container {
+  background: #1a2234 !important;
+}
+
+.dark .leaflet-tile {
+  filter: brightness(0.7) saturate(0.8) hue-rotate(200deg);
+}
