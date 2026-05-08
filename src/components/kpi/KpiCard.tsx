@@ -40,14 +40,14 @@ export default function KpiCard({
   return (
     <div
       onClick={to ? () => navigate(to) : undefined}
-      className={`rounded-xl border bg-white p-5 flex flex-col gap-3 shadow-sm border-l-4 transition-all
+      className={`rounded-xl border bg-white p-4 sm:p-5 flex flex-col gap-2.5 sm:gap-3 shadow-sm border-l-4 transition-all
         ${highlight
           ? 'border-l-red-500 border-t border-r border-b border-red-100 bg-red-50'
           : `${accentColor} border-t border-r border-b border-slate-200`}
         ${to ? 'cursor-pointer hover:shadow-lg hover:-translate-y-1 active:translate-y-0 group' : ''}`}
     >
       <div className="flex items-start justify-between">
-        <div className={`w-10 h-10 rounded-lg ${iconBg} flex items-center justify-center flex-shrink-0 shadow-sm ${to ? 'group-hover:scale-105 transition-transform' : ''}`}>
+        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${iconBg} flex items-center justify-center flex-shrink-0 shadow-sm ${to ? 'group-hover:scale-105 transition-transform' : ''}`}>
           {icon}
         </div>
         {badge && <div>{badge}</div>}
@@ -55,8 +55,8 @@ export default function KpiCard({
 
       <div className="flex-1">
         <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider mb-1">{title}</p>
-        <div className="flex items-baseline gap-1.5">
-          <span className={`text-2xl font-bold ${highlight ? 'text-red-600' : 'text-slate-900'}`}>
+        <div className="flex items-baseline gap-1.5 flex-wrap">
+          <span className={`text-[1.75rem] sm:text-[2rem] font-bold leading-none ${highlight ? 'text-red-600' : 'text-slate-900'}`}>
             {value}
           </span>
           {unit && <span className="text-slate-400 text-sm">{unit}</span>}

@@ -65,7 +65,7 @@ export default function SeoulRiskMap({ riskZones }: SeoulRiskMapProps) {
       <MapContainer
         center={SEOUL_CENTER}
         zoom={12}
-        style={{ height: '100%', minHeight: '400px', width: '100%' }}
+        style={{ height: '100%', minHeight: '280px', width: '100%' }}
         zoomControl={true}
         scrollWheelZoom={true}
       >
