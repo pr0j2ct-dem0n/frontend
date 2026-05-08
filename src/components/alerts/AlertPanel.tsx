@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { RiskZone } from '../../types/risk';
 import AlertItem from './AlertItem';
 
@@ -6,11 +7,17 @@ interface AlertPanelProps {
 }
 
 const LEVEL_ORDER = { DANGER: 0, WARNING: 1, CAUTION: 2, SAFE: 3 };
+const INITIAL_VISIBLE = 3;
 
 export default function AlertPanel({ zones }: AlertPanelProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const sorted = [...zones].sort(
     (a, b) => LEVEL_ORDER[a.riskLevel] - LEVEL_ORDER[b.riskLevel] || b.riskScore - a.riskScore
   );
+
+  const visibleZones = isExpanded ? sorted : sorted.slice(0, INITIAL_VISIBLE);
+  const hiddenCount = sorted.length - INITIAL_VISIBLE;
 
   const dangerCount = zones.filter((z) => z.riskLevel === 'DANGER').length;
   const warningCount = zones.filter((z) => z.riskLevel === 'WARNING').length;
@@ -41,7 +48,14 @@ export default function AlertPanel({ zones }: AlertPanelProps) {
             </svg>
             실시간 상황 패널
           </h2>
-          <span className="text-slate-400 text-xs">{zones.length}개소 모니터링</span>
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-slate-400 text-xs">{zones.length}개소 모니터링</span>
+            {sorted.length > INITIAL_VISIBLE && (
+              <span className="text-slate-400 text-[10px]">
+                {isExpanded ? `전체 ${sorted.length}개 표시 중` : `상위 ${INITIAL_VISIBLE}개 표시 중`}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Risk level counts */}
@@ -84,7 +98,35 @@ export default function AlertPanel({ zones }: AlertPanelProps) {
             <p className="text-sm">현재 위험 구간 없음</p>
           </div>
         ) : (
-          sorted.map((zone, index) => <AlertItem key={zone.id} zone={zone} rank={index + 1} />)
+          <>
+            {visibleZones.map((zone, index) => (
+              <AlertItem key={zone.id} zone={zone} rank={index + 1} />
+            ))}
+
+            {/* 더 보기 / 접기 버튼 */}
+            {hiddenCount > 0 && (
+              <button
+                onClick={() => setIsExpanded((prev) => !prev)}
+                className="w-full flex items-center justify-center gap-1.5 py-3 mt-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 text-xs font-medium hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 active:bg-blue-100 transition-colors min-h-[44px]"
+              >
+                {isExpanded ? (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                    접기
+                  </>
+                ) : (
+                  <>
+                    나머지 {hiddenCount}개 구간 더 보기
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </>
+                )}
+              </button>
+            )}
+          </>
         )}
       </div>
 

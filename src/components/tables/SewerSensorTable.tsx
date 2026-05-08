@@ -1,4 +1,4 @@
-import type { SewerSensor } from '../../mocks/sewerDetailMock';
+import type { SewerSensor } from '../../types/sewer';
 import { RISK_TEXT_CLASSES, RISK_LABELS } from '../../utils/riskStyle';
 
 interface SewerSensorTableProps {

@@ -1,6 +1,6 @@
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import type { DistrictRainfall } from '../../mocks/rainfallDetailMock';
+import type { DistrictRainfall } from '../../types/rainfall';
 import { RISK_COLORS } from '../../utils/riskStyle';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);

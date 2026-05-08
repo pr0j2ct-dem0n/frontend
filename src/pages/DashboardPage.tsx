@@ -4,15 +4,11 @@ import type { DashboardSummary } from '../types/dashboard';
 import type { RainfallTimeseries } from '../types/rainfall';
 import type { SewerLevelTimeseries } from '../types/sewer';
 import type { RiskZone } from '../types/risk';
-import type { PumpStation } from '../types/map';
-import type { SewageTreatmentFacility } from '../types/sewageTreatment';
 
 import { getDashboardSummary } from '../api/dashboardApi';
 import { getRainfallTimeseries } from '../api/rainfallApi';
 import { getSewerLevelTimeseries } from '../api/sewerLevelApi';
 import { getRiskZones } from '../api/riskApi';
-import { getPumpStations } from '../api/mapLayerApi';
-import { getSewageTreatmentFacilities } from '../api/sewageTreatmentApi';
 
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Header from '../components/layout/Header';
@@ -31,14 +27,7 @@ const SEOUL_DATA_SOURCES = [
   { name: '서울시 하수관로 수위 현황',  purpose: '하수관 수위, 수위 상승률, 통신상태 기반 막힘·역류 위험 판단' },
   { name: '서울시 강우량 정보',         purpose: '10분 단위 강우량 및 단기 강우 증가율 분석' },
   { name: '서울시 강수량 현황 정보',    purpose: '지역별·기간별 강수 패턴 참고 및 위험도 보조 분석' },
-  { name: '서울시 빗물펌프장 공간정보', purpose: '위험지역 인근 배수 대응 인프라 위치 분석' },
-];
-
-const PUBLIC_DATA_SOURCES = [
-  {
-    name: '한국환경공단_공공하수처리시설 현황',
-    purpose: '공공하수처리시설 위치 및 처리용량 기반 하수 처리 인프라 참고',
-  },
+  { name: '서울시 침수흔적도',          purpose: '과거 침수 발생 이력 기반 취약지역 가중치 산정' },
 ];
 
 const RISK_FACTORS = [
@@ -46,11 +35,8 @@ const RISK_FACTORS = [
   '하수관 수위 및 수위 상승률',
   '하수도 용량 대비 수위 비율',
   '과거 침수이력 가중치',
-  '빗물펌프장 접근성 및 용량',
   '하수도 시설 노후도 정보',
-  '인근 공공하수처리시설 위치 및 처리용량',
-  '하수 처리 인프라 접근성',
-  '배수·처리 대응 기반 참고',
+  'AI 위험 예측 점수',
 ];
 
 function SectionTitle({ children }: { children: ReactNode }) {
@@ -67,27 +53,21 @@ export default function DashboardPage() {
   const [rainfallData, setRainfallData] = useState<RainfallTimeseries[]>([]);
   const [sewerData, setSewerData] = useState<SewerLevelTimeseries[]>([]);
   const [riskZones, setRiskZones] = useState<RiskZone[]>([]);
-  const [pumpStations, setPumpStations] = useState<PumpStation[]>([]);
-  const [sewageFacilities, setSewageFacilities] = useState<SewageTreatmentFacility[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   const fetchAll = useCallback(async () => {
     try {
-      const [s, r, sw, rz, ps, sf] = await Promise.all([
+      const [s, r, sw, rz] = await Promise.all([
         getDashboardSummary(),
-        getRainfallTimeseries(),
-        getSewerLevelTimeseries(),
-        getRiskZones(),
-        getPumpStations(),
-        getSewageTreatmentFacilities(),
+        getRainfallTimeseries().catch(() => [] as RainfallTimeseries[]),
+        getSewerLevelTimeseries().catch(() => [] as SewerLevelTimeseries[]),
+        getRiskZones().catch(() => [] as RiskZone[]),
       ]);
       setSummary(s);
       setRainfallData(r);
       setSewerData(sw);
       setRiskZones(rz);
-      setPumpStations(ps);
-      setSewageFacilities(sf);
       setLastRefresh(new Date());
     } catch (err) {
       console.error('데이터 로딩 실패:', err);
@@ -129,11 +109,7 @@ export default function DashboardPage() {
             <div className="xl:col-span-3 flex flex-col gap-2">
               <SectionTitle>서울시 위험 구간 현황</SectionTitle>
               <div style={{ height: '520px' }}>
-                <SeoulRiskMap
-                  riskZones={riskZones}
-                  pumpStations={pumpStations}
-                  sewageFacilities={sewageFacilities}
-                />
+                <SeoulRiskMap riskZones={riskZones} />
               </div>
             </div>
 
@@ -166,9 +142,9 @@ export default function DashboardPage() {
               <h3 className="text-slate-700 text-sm font-semibold">데이터 출처 및 위험도 산정 기준</h3>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
               {/* 카드 1: 서울 열린데이터광장 */}
-              <div className="lg:col-span-1 rounded-lg border border-blue-100 bg-blue-50/50 p-4">
+              <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -191,57 +167,8 @@ export default function DashboardPage() {
                 </ul>
               </div>
 
-              {/* 카드 2: 공공데이터포털 (공공하수처리시설 현황) */}
-              <div className="lg:col-span-1 rounded-lg border border-teal-100 bg-teal-50/50 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-7 h-7 rounded-md bg-teal-600 flex items-center justify-center flex-shrink-0">
-                    {/* 환경 인프라 시설 아이콘 */}
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-teal-800 text-xs font-bold leading-tight">공공데이터포털</p>
-                    <p className="text-teal-500 text-[10px]">data.go.kr · 한국환경공단</p>
-                  </div>
-                </div>
-                <ul className="space-y-2.5">
-                  {PUBLIC_DATA_SOURCES.map((src) => (
-                    <li key={src.name}>
-                      <div className="flex items-start gap-1.5 mb-1">
-                        {/* 하수처리시설 관련 아이콘 */}
-                        <svg className="w-3.5 h-3.5 text-teal-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <p className="text-slate-700 text-xs font-semibold leading-snug">{src.name}</p>
-                      </div>
-                      <p className="text-slate-500 text-[11px] ml-5 leading-snug">{src.purpose}</p>
-                      <div className="flex flex-wrap gap-1 mt-2 ml-5">
-                        {['하수처리시설', '처리용량', '환경인프라', '대응시설 참고'].map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-1.5 py-0.5 rounded text-[10px] bg-teal-100 text-teal-700 border border-teal-200 font-medium"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="mt-3 pt-3 border-t border-teal-100 flex items-center gap-1.5 text-[11px] text-teal-600">
-                  <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  지도에서 <strong className="mx-0.5">공공하수처리시설</strong> 레이어를 켜서 위치를 확인할 수 있습니다.
-                </div>
-              </div>
-
-              {/* 카드 3: 위험도 산정 요소 */}
-              <div className="lg:col-span-1 rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+              {/* 카드 2: 위험도 산정 요소 */}
+              <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-7 h-7 rounded-md bg-slate-600 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -254,13 +181,10 @@ export default function DashboardPage() {
                 <ul className="space-y-1.5">
                   {RISK_FACTORS.map((factor, i) => (
                     <li key={factor} className="flex items-start gap-2 text-xs">
-                      <span className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold flex-shrink-0
-                        ${i >= 6 ? 'bg-teal-100 text-teal-700' : 'bg-blue-100 text-blue-600'}`}>
+                      <span className="mt-0.5 w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold flex-shrink-0 bg-blue-100 text-blue-600">
                         {i + 1}
                       </span>
-                      <span className={`leading-snug ${i >= 6 ? 'text-teal-700 font-medium' : 'text-slate-600'}`}>
-                        {factor}
-                      </span>
+                      <span className="leading-snug text-slate-600">{factor}</span>
                     </li>
                   ))}
                 </ul>
@@ -273,8 +197,7 @@ export default function DashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span>
-                본 위험도는 강우량, 하수관 수위, 하천 수위, 빗물펌프장 접근성,{' '}
-                <strong className="text-teal-600">공공하수처리시설 현황</strong> 등 도시 배수·처리 인프라 정보를 종합적으로 참고하여 표시됩니다.
+                본 위험도는 강우량, 하수관 수위, 하천 수위, 과거 침수이력 등 실시간 데이터를 AI 모델로 종합 분석하여 표시됩니다.
                 <span className="text-slate-400 ml-1.5">※ 위험도 계산은 백엔드에서 수행하며, 프론트엔드는 결과를 시각화합니다.</span>
               </span>
               <span className="ml-auto text-slate-400">위험도 산정 알고리즘 ver 1.1 · 데이터 갱신주기 1분</span>

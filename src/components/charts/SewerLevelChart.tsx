@@ -41,6 +41,18 @@ export default function SewerLevelChart({ data }: SewerLevelChartProps) {
         pointRadius: 2.5,
         pointBackgroundColor: lineColor,
       },
+      {
+        label: '위험수위 2.0m',
+        data: labels.map(() => dangerLine),
+        borderColor: 'rgba(239, 68, 68, 0.7)',
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        borderDash: [5, 4],
+        fill: false,
+        tension: 0,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+      },
     ],
   };
 

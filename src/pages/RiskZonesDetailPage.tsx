@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Header from '../components/layout/Header';
 import PageTitle, { SectionTitle } from '../components/common/PageTitle';
@@ -7,26 +8,65 @@ import RiskZoneTable from '../components/tables/RiskZoneTable';
 import RiskDistributionChart from '../components/charts/RiskDistributionChart';
 import RiskReasonChart from '../components/charts/RiskReasonChart';
 
-import { mockDashboardSummary } from '../mocks/dashboardMock';
-import { mockRiskZones } from '../mocks/riskZonesMock';
-import { mockPumpStations } from '../mocks/mapLayerMock';
-import { mockSewageTreatmentFacilities } from '../mocks/sewageTreatmentMock';
+import type { DashboardSummary } from '../types/dashboard';
+import type { RiskZone } from '../types/risk';
+import { getDashboardSummary } from '../api/dashboardApi';
+import { getRiskZones } from '../api/riskApi';
 import { formatDateTime } from '../utils/format';
 
-const dangerCount = mockRiskZones.filter((z) => z.riskLevel === 'DANGER').length;
-const warningCount = mockRiskZones.filter((z) => z.riskLevel === 'WARNING').length;
-const cautionCount = mockRiskZones.filter((z) => z.riskLevel === 'CAUTION').length;
-const safeCount = mockRiskZones.filter((z) => z.riskLevel === 'SAFE').length;
+function Spinner() {
+  return (
+    <div className="flex items-center justify-center h-[60vh]">
+      <div className="flex flex-col items-center gap-4 text-slate-400">
+        <div className="w-10 h-10 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm">데이터 로딩 중...</p>
+      </div>
+    </div>
+  );
+}
 
 export default function RiskZonesDetailPage() {
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [riskZones, setRiskZones] = useState<RiskZone[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      getDashboardSummary().then(setSummary).catch(() => {}),
+      getRiskZones().then(setRiskZones).catch(() => {}),
+    ]).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardLayout header={<Header summary={null} showBackButton />}>
+        <Spinner />
+      </DashboardLayout>
+    );
+  }
+
+  if (!summary) {
+    return (
+      <DashboardLayout header={<Header summary={null} showBackButton />}>
+        <div className="flex items-center justify-center h-[60vh] text-slate-400 text-sm">
+          데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const dangerCount = riskZones.filter((z) => z.riskLevel === 'DANGER').length;
+  const warningCount = riskZones.filter((z) => z.riskLevel === 'WARNING').length;
+  const cautionCount = riskZones.filter((z) => z.riskLevel === 'CAUTION').length;
+  const safeCount = riskZones.filter((z) => z.riskLevel === 'SAFE').length;
+
   return (
-    <DashboardLayout header={<Header summary={mockDashboardSummary} showBackButton />}>
+    <DashboardLayout header={<Header summary={summary} showBackButton />}>
       <div className="space-y-5">
-        {/* Page title */}
         <PageTitle
           title="위험 구간 상세 현황"
           description="강우량, 하수관 수위, 과거 침수이력, 펌프장 접근성을 종합하여 위험구간을 산정합니다."
-          updatedAt={formatDateTime(mockDashboardSummary.updatedAt)}
+          updatedAt={formatDateTime(summary.updatedAt)}
           iconBg="bg-orange-600"
           icon={
             <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -36,11 +76,10 @@ export default function RiskZonesDetailPage() {
           }
         />
 
-        {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <DetailSummaryCard
-            title="전체 위험구간"
-            value={mockRiskZones.length}
+            title="전체 모니터링 구"
+            value={riskZones.length}
             unit="개소"
             sub="현재 모니터링 중"
             iconBg="bg-blue-700"
@@ -94,12 +133,11 @@ export default function RiskZonesDetailPage() {
           />
         </div>
 
-        {/* Map + zone list */}
         <div className="space-y-2">
           <SectionTitle>서울시 위험 구간 지도</SectionTitle>
           <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">
             <div className="xl:col-span-3" style={{ height: '500px' }}>
-              <SeoulRiskMap riskZones={mockRiskZones} pumpStations={mockPumpStations} sewageFacilities={mockSewageTreatmentFacilities} />
+              <SeoulRiskMap riskZones={riskZones} />
             </div>
             <div className="xl:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden" style={{ height: '500px' }}>
               <div className="px-4 py-3 border-b border-slate-100 flex-shrink-0">
@@ -107,7 +145,7 @@ export default function RiskZonesDetailPage() {
                 <p className="text-slate-400 text-xs mt-0.5">위험 점수 기준 내림차순</p>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                {[...mockRiskZones]
+                {[...riskZones]
                   .sort((a, b) => b.riskScore - a.riskScore)
                   .map((zone, idx) => (
                     <div key={zone.id} className={`rounded-lg border p-3 ${zone.riskLevel === 'DANGER' ? 'bg-red-50 border-red-200' : zone.riskLevel === 'WARNING' ? 'bg-orange-50 border-orange-200' : zone.riskLevel === 'CAUTION' ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-slate-200'}`}>
@@ -138,24 +176,21 @@ export default function RiskZonesDetailPage() {
           </div>
         </div>
 
-        {/* Charts row */}
         <div className="space-y-2">
           <SectionTitle>위험도 분석 차트</SectionTitle>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <RiskDistributionChart zones={mockRiskZones} />
-            <RiskReasonChart zones={mockRiskZones} />
+            <RiskDistributionChart zones={riskZones} />
+            <RiskReasonChart zones={riskZones} />
           </div>
         </div>
 
-        {/* Full table */}
         <div className="space-y-2">
           <SectionTitle>위험 구간 상세 테이블</SectionTitle>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <RiskZoneTable zones={mockRiskZones} />
+            <RiskZoneTable zones={riskZones} />
           </div>
         </div>
 
-        {/* Data interpretation */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -165,21 +200,9 @@ export default function RiskZonesDetailPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
-              {
-                title: '이 데이터가 의미하는 것',
-                color: 'bg-blue-500',
-                items: ['위험도 점수 0~100점 산정 결과', '강우량·수위·이력·펌프장 접근성 종합', '위험 단계별 대응 수준 차등화'],
-              },
-              {
-                title: '위험 판단 근거',
-                color: 'bg-orange-500',
-                items: ['점수 70점 이상: 경계(WARNING)', '점수 80점 이상: 위험(DANGER)', '과거 침수이력 있는 구간 가중 산정'],
-              },
-              {
-                title: '대응이 필요한 상황',
-                color: 'bg-red-500',
-                items: ['DANGER 구간 2개소 이상 동시 발생 시', 'WARNING 구간 주변 추가 모니터링 필요', 'CAUTION 구간 강우 지속 시 재평가'],
-              },
+              { title: '이 데이터가 의미하는 것', color: 'bg-blue-500', items: ['위험도 점수 0~100점 산정 결과', '강우량·수위·이력·펌프장 접근성 종합', '위험 단계별 대응 수준 차등화'] },
+              { title: '위험 판단 근거', color: 'bg-orange-500', items: ['점수 70점 이상: 경계(WARNING)', '점수 80점 이상: 위험(DANGER)', '과거 침수이력 있는 구간 가중 산정'] },
+              { title: '대응이 필요한 상황', color: 'bg-red-500', items: ['DANGER 구간 2개소 이상 동시 발생 시', 'WARNING 구간 주변 추가 모니터링 필요', 'CAUTION 구간 강우 지속 시 재평가'] },
             ].map((panel) => (
               <div key={panel.title}>
                 <p className="text-slate-700 text-xs font-semibold mb-2 flex items-center gap-1.5">

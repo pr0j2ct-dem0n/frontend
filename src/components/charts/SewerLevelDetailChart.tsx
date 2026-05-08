@@ -1,6 +1,6 @@
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import type { SewerSensor } from '../../mocks/sewerDetailMock';
+import type { SewerSensor } from '../../types/sewer';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
