@@ -14,7 +14,7 @@ export function toRiskLevel(korean: string): RiskLevel {
 export function toRiskZone(area: PredictAreaItem, index: number): RiskZone {
   const coords = getGuCoords(area.gu_name);
   const occupancy = area.metrics.drainpipe_occupancy_ratio;
-  const estimatedLevelM = Math.round((occupancy / 100) * 2.5 * 100) / 100;
+  const estimatedLevelM = Math.round((occupancy / 100) * 2.0 * 100) / 100;
 
   return {
     id: `GU-${String(index + 1).padStart(3, '0')}`,

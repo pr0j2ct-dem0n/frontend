@@ -23,3 +23,13 @@ export interface SewerLevelTimeseries {
   levelChangeRate: number;
   communicationStatus: CommunicationStatus;
 }
+
+export interface SewerGuRiskItem {
+  guName: string;
+  avgWaterLevel: number;
+  maxWaterLevel: number;
+  stationCount: number;
+  maxCapacity: number;
+  riskPercent: number;
+  status: 'NORMAL' | 'CAUTION' | 'WARNING' | 'DANGER';
+}

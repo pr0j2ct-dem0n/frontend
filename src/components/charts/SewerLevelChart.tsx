@@ -37,8 +37,9 @@ export default function SewerLevelChart({ data }: SewerLevelChartProps) {
         backgroundColor: fillColor,
         borderWidth: 2,
         fill: true,
-        tension: 0.4,
-        pointRadius: 2.5,
+        tension: 0.35,
+        pointRadius: 1,
+        pointHoverRadius: 3,
         pointBackgroundColor: lineColor,
       },
       {
@@ -73,7 +74,7 @@ export default function SewerLevelChart({ data }: SewerLevelChartProps) {
     },
     scales: {
       x: {
-        ticks: { color: TICK_COLOR, font: { size: 10 } },
+        ticks: { color: TICK_COLOR, font: { size: 10 }, maxTicksLimit: 8, autoSkip: true },
         grid: { color: GRID_COLOR },
       },
       y: {
@@ -89,7 +90,7 @@ export default function SewerLevelChart({ data }: SewerLevelChartProps) {
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
       <h3 className="text-slate-700 text-sm font-semibold mb-3 flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-orange-500" />
-        시간대별 하수관 수위
+        서울 평균 수위 추세
         <span className="ml-auto text-slate-400 text-xs font-normal">위험수위 {dangerLine}m</span>
       </h3>
       <div style={{ height: '200px' }}>

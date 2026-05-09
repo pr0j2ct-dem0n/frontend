@@ -8,10 +8,9 @@ import SewerLevelDetailChart from '../components/charts/SewerLevelDetailChart';
 import SewerSensorTable from '../components/tables/SewerSensorTable';
 
 import type { DashboardSummary } from '../types/dashboard';
-import type { SewerLevelTimeseries } from '../types/sewer';
-import type { SewerSensor } from '../types/sewer';
+import type { SewerGuRiskItem, SewerLevelTimeseries, SewerSensor } from '../types/sewer';
 import { getDashboardSummary } from '../api/dashboardApi';
-import { getSewerLevelTimeseries, getSewerSensors } from '../api/sewerLevelApi';
+import { getSewerGuRiskTop10, getSewerLevelTimeseries, getSewerSensors } from '../api/sewerLevelApi';
 import { formatDateTime } from '../utils/format';
 
 function Spinner() {
@@ -29,6 +28,7 @@ export default function SewerLevelDetailPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [timeseries, setTimeseries] = useState<SewerLevelTimeseries[]>([]);
   const [sensors, setSensors] = useState<SewerSensor[]>([]);
+  const [guRiskTop10, setGuRiskTop10] = useState<SewerGuRiskItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,6 +36,7 @@ export default function SewerLevelDetailPage() {
       getDashboardSummary().then(setSummary).catch(() => {}),
       getSewerLevelTimeseries().then(setTimeseries).catch(() => {}),
       getSewerSensors().then(setSensors).catch(() => {}),
+      getSewerGuRiskTop10().then(setGuRiskTop10).catch(() => {}),
     ]).finally(() => setLoading(false));
   }, []);
 
@@ -57,17 +58,17 @@ export default function SewerLevelDetailPage() {
     );
   }
 
-  const avgLevel = sensors.length > 0 ? sensors.reduce((s, x) => s + x.waterLevelM, 0) / sensors.length : 0;
+  const latestTimeseriesAvg = timeseries.length > 0 ? timeseries[timeseries.length - 1].waterLevelM : 0;
   const maxSensor = sensors.length > 0 ? [...sensors].sort((a, b) => b.waterLevelM - a.waterLevelM)[0] : null;
   const avgRiseRate = sensors.length > 0 ? sensors.reduce((s, x) => s + x.levelChangeRate, 0) / sensors.length : 0;
-  const disconnectedCount = sensors.filter((s) => s.communicationStatus !== 'NORMAL').length;
+  const riskyGuCount = guRiskTop10.filter((g) => g.status === 'WARNING' || g.status === 'DANGER').length;
 
   return (
     <DashboardLayout header={<Header summary={summary} showBackButton />}>
       <div className="space-y-5">
         <PageTitle
           title="하수관 수위 상세 분석"
-          description="하수관 수위와 상승 속도를 기반으로 막힘, 역류, 배수 지연 가능성을 모니터링합니다."
+          description="하수관 실측 센서(raw/gu) 기준으로 막힘, 역류, 배수 지연 가능성을 모니터링합니다. (종합위험 점수 기준과 별도)"
           updatedAt={formatDateTime(summary.updatedAt)}
           iconBg="bg-cyan-600"
           icon={
@@ -81,9 +82,9 @@ export default function SewerLevelDetailPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <DetailSummaryCard
             title="평균 하수관 수위"
-            value={avgLevel.toFixed(2)}
+            value={latestTimeseriesAvg.toFixed(2)}
             unit="m"
-            sub={sensors.length > 0 ? '전체 구 평균' : '센서 데이터 없음'}
+            sub={sensors.length > 0 ? `최신 5분 평균 · 센서 ${sensors.length}개 기준` : '센서 데이터 없음'}
             iconBg="bg-cyan-600"
             accentColor="border-l-cyan-500"
             icon={
@@ -121,13 +122,13 @@ export default function SewerLevelDetailPage() {
             }
           />
           <DetailSummaryCard
-            title="통신 이상 센서"
-            value={disconnectedCount}
-            unit="개"
-            sub="지연·불통 포함"
-            iconBg={disconnectedCount > 0 ? 'bg-red-600' : 'bg-green-600'}
-            accentColor={disconnectedCount > 0 ? 'border-l-red-500' : 'border-l-green-500'}
-            highlight={disconnectedCount >= 2}
+            title="위험 자치구 수"
+            value={riskyGuCount}
+            unit="개 구"
+            sub="TOP10 기준 WARNING·DANGER"
+            iconBg={riskyGuCount > 0 ? 'bg-red-600' : 'bg-green-600'}
+            accentColor={riskyGuCount > 0 ? 'border-l-red-500' : 'border-l-green-500'}
+            highlight={riskyGuCount >= 2}
             icon={
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636a9 9 0 010 12.728m-3.536-3.536a4 4 0 010-5.656M9.172 16.172a4 4 0 010-5.656m-3.536 3.536a9 9 0 010-12.728" />
@@ -170,11 +171,11 @@ export default function SewerLevelDetailPage() {
                 </div>
               )}
             </div>
-            {sensors.length > 0 ? (
-              <SewerLevelDetailChart sensors={sensors} />
+            {guRiskTop10.length > 0 ? (
+              <SewerLevelDetailChart data={guRiskTop10} />
             ) : (
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex items-center justify-center text-slate-400 text-sm" style={{ minHeight: '280px' }}>
-                현재 구별 센서 데이터가 없습니다
+                현재 자치구별 위험도 데이터가 없습니다
               </div>
             )}
           </div>

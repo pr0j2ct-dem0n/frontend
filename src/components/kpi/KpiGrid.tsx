@@ -74,7 +74,7 @@ export default function KpiGrid({ summary }: KpiGridProps) {
       <KpiCard
         title="최고 위험 지역"
         value={summary.highestRiskArea}
-        subValue="현재 가장 높은 위험도"
+        subValue="종합위험 기준 (강우·수위·이력·구조)"
         highlight={summary.highestRiskLevel === 'DANGER'}
         iconBg="bg-red-600"
         accentColor="border-l-red-500"

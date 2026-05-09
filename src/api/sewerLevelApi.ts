@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { SewerLevelTimeseries, SewerSensor } from '../types/sewer';
+import type { SewerGuRiskItem, SewerLevelTimeseries, SewerSensor } from '../types/sewer';
 import type { RiskLevel } from '../types/dashboard';
 
 interface DrainpipeRow {
@@ -20,11 +20,61 @@ interface DrainpipeRawResponse {
   };
 }
 
-const MAX_CAPACITY_M = 2.5;
+const MAX_CAPACITY_M = 2.0;
 const CACHE_TTL = 55_000;
+const TIMESERIES_BUCKET_MINUTES = 5;
+const TIMESERIES_WINDOW_MS = 60 * 60 * 1000;
 
 let _cache: { rows: DrainpipeRow[]; fetchedAt: number } | null = null;
 let _inflight: Promise<DrainpipeRow[]> | null = null;
+
+interface SewerPipeGuRow {
+  gu?: string;
+  gu_name?: string;
+  pipe_level_avg?: number;
+  avg_water_level?: number;
+  pipe_level_max?: number;
+  max_water_level?: number;
+  occupancy_ratio?: number;
+  status?: string;
+  overflow_risk?: boolean;
+  station_count?: number;
+  max_capacity?: number;
+}
+
+function mapGuRiskRow(row: SewerPipeGuRow): SewerGuRiskItem | null {
+  const avgWaterLevel = row.pipe_level_avg ?? row.avg_water_level ?? 0;
+  const maxWaterLevel = row.pipe_level_max ?? row.max_water_level ?? avgWaterLevel;
+  if (maxWaterLevel < 0) return null;
+  const maxCapacity = row.max_capacity ?? MAX_CAPACITY_M;
+  const ratioFromMax = (maxWaterLevel / maxCapacity) * 100;
+  const riskPercent = Math.min(row.occupancy_ratio ?? ratioFromMax, 100);
+  const normalizedStatus = normalizeGuStatus(row.status, riskPercent);
+  return {
+    guName: row.gu ?? row.gu_name ?? '알수없음',
+    avgWaterLevel: Math.round(avgWaterLevel * 100) / 100,
+    maxWaterLevel: Math.round(maxWaterLevel * 100) / 100,
+    stationCount: row.station_count ?? 0,
+    maxCapacity,
+    riskPercent: Math.round(riskPercent * 10) / 10,
+    status: normalizedStatus,
+  };
+}
+
+function statusFromRatio(ratio: number): 'NORMAL' | 'CAUTION' | 'WARNING' | 'DANGER' {
+  if (ratio >= 80) return 'DANGER';
+  if (ratio >= 60) return 'WARNING';
+  if (ratio >= 40) return 'CAUTION';
+  return 'NORMAL';
+}
+
+function normalizeGuStatus(status: string | undefined, ratio: number): 'NORMAL' | 'CAUTION' | 'WARNING' | 'DANGER' {
+  const upper = status?.toUpperCase();
+  if (upper === 'NORMAL' || upper === 'CAUTION' || upper === 'WARNING' || upper === 'DANGER') {
+    return upper;
+  }
+  return statusFromRatio(ratio);
+}
 
 async function fetchRawRows(): Promise<DrainpipeRow[]> {
   if (_cache && Date.now() - _cache.fetchedAt < CACHE_TTL) return _cache.rows;
@@ -51,34 +101,50 @@ function parseStatus(sgn: string): 'NORMAL' | 'DELAYED' | 'DISCONNECTED' {
 
 function toRiskLevel(levelM: number): RiskLevel {
   const rate = (levelM / MAX_CAPACITY_M) * 100;
-  if (rate >= 90) return 'DANGER';
-  if (rate >= 75) return 'WARNING';
-  if (rate >= 50) return 'CAUTION';
+  if (rate >= 80) return 'DANGER';
+  if (rate >= 60) return 'WARNING';
+  if (rate >= 40) return 'CAUTION';
   return 'SAFE';
 }
 
 export async function getSewerLevelTimeseries(): Promise<SewerLevelTimeseries[]> {
   try {
     const rows = await fetchRawRows();
-    const byTime = new Map<string, number[]>();
-    for (const row of rows) {
-      const ts = row.MSRMT_YMD.replace(' ', 'T').replace(/\.0$/, '');
-      const arr = byTime.get(ts) ?? [];
+    const validRows = rows
+      .map((row) => {
+        const ts = row.MSRMT_YMD.replace(' ', 'T').replace(/\.0$/, '');
+        const ms = new Date(ts).getTime();
+        return { row, ms };
+      })
+      .filter(({ row, ms }) => Number.isFinite(ms) && row.MSRMT_WATL >= 0);
+
+    if (validRows.length === 0) return [];
+
+    const latestMs = validRows.reduce((max, item) => (item.ms > max ? item.ms : max), 0);
+    const cutoffMs = latestMs - TIMESERIES_WINDOW_MS;
+    const bucketSizeMs = TIMESERIES_BUCKET_MINUTES * 60 * 1000;
+    const byBucket = new Map<number, number[]>();
+
+    for (const { row, ms } of validRows) {
+      if (ms < cutoffMs) continue;
+      const bucketStart = Math.floor(ms / bucketSizeMs) * bucketSizeMs;
+      const arr = byBucket.get(bucketStart) ?? [];
       arr.push(row.MSRMT_WATL);
-      byTime.set(ts, arr);
+      byBucket.set(bucketStart, arr);
     }
-    const result = [...byTime.entries()]
-      .map(([ts, levels]) => ({
-        timestamp: ts,
+
+    const result = [...byBucket.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([bucketStart, levels]) => ({
+        timestamp: new Date(bucketStart).toISOString(),
         sensorId: 'SWR-SEOUL-AVG',
         locationName: '서울시 평균',
         district: '서울시 전체',
-        waterLevelM:
-          Math.round((levels.reduce((s, v) => s + v, 0) / levels.length) * 100) / 100,
+        waterLevelM: Math.round((levels.reduce((s, v) => s + v, 0) / levels.length) * 100) / 100,
         levelChangeRate: 0,
         communicationStatus: 'NORMAL' as const,
-      }))
-      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+      }));
+
     console.log('[sewer-level timeseries normalized] last 3:', result.slice(-3));
     return result;
   } catch (err) {
@@ -90,8 +156,9 @@ export async function getSewerLevelTimeseries(): Promise<SewerLevelTimeseries[]>
 export async function getSewerSensors(): Promise<SewerSensor[]> {
   try {
     const rows = await fetchRawRows();
+    const validRows = rows.filter((row) => row.MSRMT_WATL >= 0);
     const latestPerSensor = new Map<string, DrainpipeRow>();
-    for (const row of rows) {
+    for (const row of validRows) {
       const existing = latestPerSensor.get(row.UNQ_NO);
       if (!existing || row.MSRMT_YMD > existing.MSRMT_YMD) {
         latestPerSensor.set(row.UNQ_NO, row);
@@ -118,14 +185,27 @@ export async function getSewerSensors(): Promise<SewerSensor[]> {
 
 export async function getAverageSewerLevelM(): Promise<number> {
   try {
-    const rows = await fetchRawRows();
-    if (rows.length === 0) return 0;
-    // Use only the most recent timestamp's readings
-    const latestTs = rows.reduce((m, r) => (r.MSRMT_YMD > m ? r.MSRMT_YMD : m), '');
-    const latest = rows.filter((r) => r.MSRMT_YMD === latestTs);
-    const avg = latest.reduce((s, r) => s + r.MSRMT_WATL, 0) / latest.length;
-    return Math.round(avg * 100) / 100;
+    const timeseries = await getSewerLevelTimeseries();
+    if (timeseries.length === 0) return 0;
+    return timeseries[timeseries.length - 1].waterLevelM;
   } catch {
     return 0;
+  }
+}
+
+export async function getSewerGuRiskTop10(): Promise<SewerGuRiskItem[]> {
+  const all = await getSewerGuRisks();
+  return [...all].sort((a, b) => b.riskPercent - a.riskPercent).slice(0, 10);
+}
+
+export async function getSewerGuRisks(): Promise<SewerGuRiskItem[]> {
+  try {
+    const { data } = await apiClient.get('/sewer-pipe/gu');
+    const rows: SewerPipeGuRow[] = data?.items ?? data ?? [];
+    const result = rows.map(mapGuRiskRow).filter((row): row is SewerGuRiskItem => row !== null);
+    return result;
+  } catch (err) {
+    console.error('[sewer-pipe gu error]', err);
+    return [];
   }
 }
