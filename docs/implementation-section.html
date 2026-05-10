@@ -376,7 +376,7 @@
         <div class="di-num">3</div>
         <div class="di-text">
           <div class="di-title">전체 위험 등급 배지</div>
-          <div class="di-body">백엔드 집계 결과를 <span class="chip red">위험</span><span class="chip orange">경계</span><span class="chip">주의</span><span class="chip green">안전</span> 4단계로 표시</div>
+          <div class="di-body">백엔드 집계 결과를 <span class="chip red">위험</span><span class="chip orange">경고</span><span class="chip">주의</span><span class="chip green">안전</span> 4단계로 표시</div>
         </div>
       </div>
       <div class="desc-item">
@@ -397,7 +397,7 @@
         <div class="di-num">6</div>
         <div class="di-text">
           <div class="di-title">위험 구간 수</div>
-          <div class="di-body">예측 모델 결과 → 현재 위험·경계·주의 구간 <strong>7개소</strong> 집계</div>
+          <div class="di-body">예측 모델 결과 → 현재 안전·주의·경고 구간 <strong>7개소</strong> 집계</div>
         </div>
       </div>
       <div class="desc-item">
@@ -433,7 +433,7 @@
     <div class="section-tag">4. 개발과정 및 방법 — 구현 결과</div>
     <div class="section-title">구현 화면 ② 위험도 예측 모델 → 4단계 등급 지도 시각화</div>
     <div class="section-desc">
-      XGBoost/LightGBM 기반 예측 모델이 산출한 위험 점수(0~100점)를 안전·주의·경계·위험 4단계로 표준화하여
+      XGBoost/LightGBM 기반 예측 모델이 산출한 위험 점수(0~100점)를 안전·주의·경고·위험 4단계로 표준화하여
       Leaflet 지도 위에 레이어별로 시각화합니다.
     </div>
   </div>
@@ -475,7 +475,7 @@
         <div class="di-num">3</div>
         <div class="di-text">
           <div class="di-title">위험 구간 원형 마커</div>
-          <div class="di-body">색상: 위험(빨강)·경계(주황)·주의(노랑)·안전(초록)<br><strong>원 크기 ∝ 위험 점수</strong> (0~100점)<br>마우스 오버 → 지역명·점수·수위·용량 Tooltip</div>
+          <div class="di-body">색상: 안전(초록)·주의(노랑)·경고(주황)·위험(빨강)<br><strong>원 크기 ∝ 위험 점수</strong> (0~100점)<br>마우스 오버 → 지역명·점수·수위·용량 Tooltip</div>
         </div>
       </div>
       <div class="desc-item">
@@ -518,7 +518,7 @@
     <div class="section-tag">4. 개발과정 및 방법 — 구현 결과</div>
     <div class="section-title">구현 화면 ③ 위험도 4단계 등급 체계 — 실시간 상황 패널</div>
     <div class="section-desc">
-      백엔드 예측 모델이 산출한 위험 점수를 안전·주의·경계·위험 4단계로 표준화하고,
+      백엔드 예측 모델이 산출한 위험 점수를 안전·주의·경고·위험 4단계로 표준화하고,
       위험 원인과 주요 지표를 구간별 카드로 표시합니다.
     </div>
   </div>
@@ -554,7 +554,7 @@
           <div class="di-title">단계별 카운트 태그</div>
           <div class="di-body">
             <span class="chip red">위험 1</span>&nbsp;
-            <span class="chip orange">경계 2</span>&nbsp;
+            <span class="chip orange">경고 2</span>&nbsp;
             <span class="chip">주의 3</span><br>
             실시간으로 단계별 구간 수 집계 표시
           </div>
@@ -574,7 +574,7 @@
       <div class="desc-item">
         <div class="di-num">4</div>
         <div class="di-text">
-          <div class="di-title">경계(WARNING) 구간 카드 — 78점</div>
+          <div class="di-title">경고(WARNING) 구간 카드 — 78점</div>
           <div class="di-body">
             <strong>도림천 주변 · 영등포구</strong><br>
             하천 수위 급증, 하수관 용량 80% 이상, 30분 강우량 기준 초과<br>

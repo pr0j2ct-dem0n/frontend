@@ -48,7 +48,7 @@ export default function SeoulRiskMap({ riskZones }: SeoulRiskMapProps) {
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#F97316' }} />
-            <span className="text-[11px] text-slate-600">경계</span>
+            <span className="text-[11px] text-slate-600">경고</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#EAB308' }} />

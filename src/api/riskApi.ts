@@ -6,7 +6,7 @@ import { getGuCoords } from '../utils/guCoordinates';
 
 export function toRiskLevel(korean: string): RiskLevel {
   if (korean === '위험') return 'DANGER';
-  if (korean === '경계') return 'WARNING';
+  if (korean === '경계' || korean === '경고') return 'WARNING';
   if (korean === '주의') return 'CAUTION';
   return 'SAFE';
 }

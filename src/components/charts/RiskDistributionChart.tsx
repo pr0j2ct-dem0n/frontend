@@ -17,11 +17,11 @@ export default function RiskDistributionChart({ zones }: RiskDistributionChartPr
   };
 
   const chartData = {
-    labels: ['위험', '경계', '주의', '안전'],
+    labels: ['안전', '주의', '경고', '위험'],
     datasets: [
       {
-        data: [counts.DANGER, counts.WARNING, counts.CAUTION, counts.SAFE],
-        backgroundColor: ['#EF4444', '#F97316', '#EAB308', '#22C55E'],
+        data: [counts.SAFE, counts.CAUTION, counts.WARNING, counts.DANGER],
+        backgroundColor: ['#22C55E', '#EAB308', '#F97316', '#EF4444'],
         borderColor: '#ffffff',
         borderWidth: 3,
         hoverOffset: 6,
@@ -64,10 +64,10 @@ export default function RiskDistributionChart({ zones }: RiskDistributionChartPr
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-center">
         {[
-          { label: '위험', count: counts.DANGER, color: 'text-red-600' },
-          { label: '경계', count: counts.WARNING, color: 'text-orange-500' },
-          { label: '주의', count: counts.CAUTION, color: 'text-yellow-600' },
           { label: '안전', count: counts.SAFE, color: 'text-green-600' },
+          { label: '주의', count: counts.CAUTION, color: 'text-yellow-600' },
+          { label: '경고', count: counts.WARNING, color: 'text-orange-500' },
+          { label: '위험', count: counts.DANGER, color: 'text-red-600' },
         ].map((item) => (
           <div key={item.label} className="bg-slate-50 rounded-lg py-1.5">
             <p className={`text-base font-bold ${item.color}`}>{item.count}</p>

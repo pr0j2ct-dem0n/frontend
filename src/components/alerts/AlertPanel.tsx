@@ -69,7 +69,7 @@ export default function AlertPanel({ zones }: AlertPanelProps) {
           {warningCount > 0 && (
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
               <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-              경계 {warningCount}
+              경고 {warningCount}
             </span>
           )}
           {cautionCount > 0 && (

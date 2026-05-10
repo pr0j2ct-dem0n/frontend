@@ -122,7 +122,7 @@ export default function DetailRiskMap({
         <div className="space-y-1">
           {[
             { color: '#EF4444', label: '위험' },
-            { color: '#F97316', label: '경계' },
+            { color: '#F97316', label: '경고' },
             { color: '#EAB308', label: '주의' },
             { color: '#22C55E', label: '안전' },
           ].map((item) => (

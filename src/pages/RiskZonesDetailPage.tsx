@@ -105,7 +105,7 @@ export default function RiskZonesDetailPage() {
             }
           />
           <DetailSummaryCard
-            title="경계 단계"
+            title="경고 단계"
             value={warningCount}
             unit="개소"
             sub="상황 모니터링 중"
@@ -159,7 +159,7 @@ export default function RiskZonesDetailPage() {
                         </div>
                         <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
                           <span className={`text-xs font-bold ${zone.riskLevel === 'DANGER' ? 'text-red-600' : zone.riskLevel === 'WARNING' ? 'text-orange-600' : zone.riskLevel === 'CAUTION' ? 'text-yellow-600' : 'text-green-600'}`}>
-                            {zone.riskLevel === 'DANGER' ? '위험' : zone.riskLevel === 'WARNING' ? '경계' : zone.riskLevel === 'CAUTION' ? '주의' : '안전'}
+                            {zone.riskLevel === 'DANGER' ? '위험' : zone.riskLevel === 'WARNING' ? '경고' : zone.riskLevel === 'CAUTION' ? '주의' : '안전'}
                           </span>
                           <span className="text-slate-400 text-xs">{zone.riskScore}점</span>
                         </div>
@@ -201,7 +201,7 @@ export default function RiskZonesDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
               { title: '이 데이터가 의미하는 것', color: 'bg-blue-500', items: ['위험도 점수 0~100점 산정 결과', '강우량·수위·이력·펌프장 접근성 종합', '위험 단계별 대응 수준 차등화'] },
-              { title: '위험 판단 근거', color: 'bg-orange-500', items: ['점수 70점 이상: 경계(WARNING)', '점수 80점 이상: 위험(DANGER)', '과거 침수이력 있는 구간 가중 산정'] },
+              { title: '위험 판단 근거', color: 'bg-orange-500', items: ['점수 70점 이상: 경고(WARNING)', '점수 80점 이상: 위험(DANGER)', '과거 침수이력 있는 구간 가중 산정'] },
               { title: '대응이 필요한 상황', color: 'bg-red-500', items: ['DANGER 구간 2개소 이상 동시 발생 시', 'WARNING 구간 주변 추가 모니터링 필요', 'CAUTION 구간 강우 지속 시 재평가'] },
             ].map((panel) => (
               <div key={panel.title}>

@@ -3,7 +3,7 @@ import type { RiskLevel } from '../types/dashboard';
 export const RISK_LABELS: Record<RiskLevel, string> = {
   SAFE: '안전',
   CAUTION: '주의',
-  WARNING: '경계',
+  WARNING: '경고',
   DANGER: '위험',
 };
 
