@@ -183,7 +183,7 @@ export default function SewerLevelDetailPage() {
 
         {sensors.length > 0 && (
           <div className="space-y-2">
-            <SectionTitle>구별 수위 현황</SectionTitle>
+            <SectionTitle>구별 수위 현황 (Top 10)</SectionTitle>
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <SewerSensorTable sensors={sensors} />
             </div>

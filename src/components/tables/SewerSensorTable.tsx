@@ -18,7 +18,9 @@ const STATUS_CLASSES: Record<SewerSensor['communicationStatus'], string> = {
 };
 
 export default function SewerSensorTable({ sensors }: SewerSensorTableProps) {
-  const sorted = [...sensors].sort((a, b) => b.waterLevelM - a.waterLevelM);
+  const sortedTop10 = [...sensors]
+    .sort((a, b) => b.waterLevelM - a.waterLevelM)
+    .slice(0, 10);
 
   return (
     <div className="overflow-x-auto">
@@ -36,7 +38,7 @@ export default function SewerSensorTable({ sensors }: SewerSensorTableProps) {
           </tr>
         </thead>
         <tbody>
-          {sorted.map((sensor) => (
+          {sortedTop10.map((sensor) => (
             <tr key={sensor.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
               <td className="py-2.5 px-3 font-mono text-xs text-slate-400">{sensor.id}</td>
               <td className="py-2.5 px-3 text-slate-800 font-medium text-sm">{sensor.locationName}</td>
