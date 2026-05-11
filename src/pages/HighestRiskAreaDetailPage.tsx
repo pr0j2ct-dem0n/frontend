@@ -125,6 +125,14 @@ export default function HighestRiskAreaDetailPage() {
         }
 
         setSelectedZone(chosen);
+        // Ensure the chosen zone is present in riskZones so the map can highlight it
+        if (chosen) {
+          setRiskZones((prev) => {
+            const exists = prev.find((z) => z.name === chosen!.name || z.id === chosen!.id);
+            if (exists) return prev;
+            return [...prev, chosen!];
+          });
+        }
       } finally {
         setLoading(false);
       }
