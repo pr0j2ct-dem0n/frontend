@@ -28,7 +28,7 @@ export default function Header({ summary, lastRefresh, onRefresh, showBackButton
         </div>
         <div>
           <h1 className="text-slate-900 font-bold text-sm leading-tight tracking-tight">
-            서울시 하수도 막힘 위험 모니터링
+            서울시 하수도 수위 조절 알림 모니터링
           </h1>
           <p className="text-slate-400 text-[11px]">Seoul Sewer Blockage Risk Monitoring System</p>
         </div>
