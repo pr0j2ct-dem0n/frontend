@@ -16,6 +16,7 @@ import { getRiskZones } from '../api/riskApi';
 import { getRainfallTimeseries } from '../api/rainfallApi';
 import { getSewerLevelTimeseries } from '../api/sewerLevelApi';
 import { getSewerGuRisks } from '../api/sewerLevelApi';
+import type { SewerGuRiskItem } from '../types/sewer';
 import { getFloodHistoryItems, getFloodCountForDistrict } from '../api/floodHistoryApi';
 import type { FloodHistoryGuItem } from '../api/backendTypes';
 import { RISK_LABELS } from '../utils/riskStyle';
@@ -76,18 +77,18 @@ export default function HighestRiskAreaDetailPage() {
         const guParam = searchParams.get('gu');
 
         // helper to map sewer-gu risk item into RiskZone-like object
-        function mapSewerGuToZone(item: any, idx = 0): RiskZone {
-          const coords = getGuCoords(item.guName || item.gu_name || item.gu ?? '');
-          const avgLevel = item.avgWaterLevel ?? item.avg_water_level ?? 0;
-          const maxCapacity = item.maxCapacity ?? item.max_capacity ?? 2.0;
+        function mapSewerGuToZone(item: SewerGuRiskItem, idx = 0): RiskZone {
+          const coords = getGuCoords(item.guName ?? '');
+          const avgLevel = item.avgWaterLevel ?? 0;
+          const maxCapacity = item.maxCapacity ?? 2.0;
           const capacityRate = Math.round((avgLevel / maxCapacity) * 100);
           const riskScore = Math.round(item.totalRisk ?? 0);
           const status = (item.status ?? '').toString().toUpperCase();
           const riskLevel = status === 'DANGER' ? 'DANGER' : status === 'WARNING' ? 'WARNING' : status === 'CAUTION' ? 'CAUTION' : 'SAFE';
           return {
             id: `GU-${String(idx + 1).padStart(3, '0')}`,
-            name: item.guName ?? item.gu_name ?? item.gu ?? '알수없음',
-            district: item.guName ?? item.gu_name ?? item.gu ?? '알수없음',
+            name: item.guName ?? '알수없음',
+            district: item.guName ?? '알수없음',
             latitude: coords.lat,
             longitude: coords.lng,
             riskScore,
@@ -107,12 +108,12 @@ export default function HighestRiskAreaDetailPage() {
         if (guParam) {
           chosen = (zonesRes as RiskZone[]).find((z) => z.name === guParam || z.district === guParam) ?? null;
           if (!chosen) {
-            const sewerGu = await getSewerGuRisks().catch(() => [] as any[]);
-            const matched = sewerGu.find((s: any) => s.guName === guParam || s.gu_name === guParam || s.gu === guParam);
+            const sewerGu = await getSewerGuRisks().catch(() => [] as SewerGuRiskItem[]);
+            const matched = sewerGu.find((s) => s.guName === guParam);
             if (matched) chosen = mapSewerGuToZone(matched, 0);
           }
         } else {
-          const sewerGu = await getSewerGuRisks().catch(() => [] as any[]);
+          const sewerGu = await getSewerGuRisks().catch(() => [] as SewerGuRiskItem[]);
           if (sewerGu && sewerGu.length > 0) {
             const top = [...sewerGu].sort((a, b) => (b.totalRisk ?? 0) - (a.totalRisk ?? 0))[0];
             chosen = (zonesRes as RiskZone[]).find((z) => z.name === top.guName || z.district === top.guName) ?? mapSewerGuToZone(top, 0);
