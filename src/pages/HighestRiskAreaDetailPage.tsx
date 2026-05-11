@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Header from '../components/layout/Header';
 import PageTitle, { SectionTitle } from '../components/common/PageTitle';
@@ -14,9 +15,11 @@ import { getDashboardSummary } from '../api/dashboardApi';
 import { getRiskZones } from '../api/riskApi';
 import { getRainfallTimeseries } from '../api/rainfallApi';
 import { getSewerLevelTimeseries } from '../api/sewerLevelApi';
+import { getSewerGuRisks } from '../api/sewerLevelApi';
 import { getFloodHistoryItems, getFloodCountForDistrict } from '../api/floodHistoryApi';
 import type { FloodHistoryGuItem } from '../api/backendTypes';
 import { RISK_LABELS } from '../utils/riskStyle';
+import { getGuCoords } from '../utils/guCoordinates';
 import { formatDateTime } from '../utils/format';
 
 const SEVERITY_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
@@ -46,20 +49,88 @@ function Spinner() {
 export default function HighestRiskAreaDetailPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [riskZones, setRiskZones] = useState<RiskZone[]>([]);
+  const [selectedZone, setSelectedZone] = useState<RiskZone | null>(null);
   const [rainfallTimeseries, setRainfallTimeseries] = useState<RainfallTimeseries[]>([]);
   const [sewerTimeseries, setSewerTimeseries] = useState<SewerLevelTimeseries[]>([]);
   const [floodHistory, setFloodHistory] = useState<FloodHistoryGuItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    Promise.all([
-      getDashboardSummary().then(setSummary).catch(() => {}),
-      getRiskZones().then(setRiskZones).catch(() => {}),
-      getRainfallTimeseries().then(setRainfallTimeseries).catch(() => {}),
-      getSewerLevelTimeseries().then(setSewerTimeseries).catch(() => {}),
-      getFloodHistoryItems().then(setFloodHistory).catch(() => {}),
-    ]).finally(() => setLoading(false));
-  }, []);
+    async function load() {
+      try {
+        const [summaryRes, zonesRes, rainRes, sewerTsRes, floodRes] = await Promise.all([
+          getDashboardSummary().catch(() => null),
+          getRiskZones().catch(() => [] as RiskZone[]),
+          getRainfallTimeseries().catch(() => [] as RainfallTimeseries[]),
+          getSewerLevelTimeseries().catch(() => [] as SewerLevelTimeseries[]),
+          getFloodHistoryItems().catch(() => [] as FloodHistoryGuItem[]),
+        ]);
+
+        setSummary(summaryRes as DashboardSummary | null);
+        setRiskZones(zonesRes as RiskZone[]);
+        setRainfallTimeseries(rainRes as RainfallTimeseries[]);
+        setSewerTimeseries(sewerTsRes as SewerLevelTimeseries[]);
+        setFloodHistory(floodRes as FloodHistoryGuItem[]);
+
+        const guParam = searchParams.get('gu');
+
+        // helper to map sewer-gu risk item into RiskZone-like object
+        function mapSewerGuToZone(item: any, idx = 0): RiskZone {
+          const coords = getGuCoords(item.guName || item.gu_name || item.gu ?? '');
+          const avgLevel = item.avgWaterLevel ?? item.avg_water_level ?? 0;
+          const maxCapacity = item.maxCapacity ?? item.max_capacity ?? 2.0;
+          const capacityRate = Math.round((avgLevel / maxCapacity) * 100);
+          const riskScore = Math.round(item.totalRisk ?? 0);
+          const status = (item.status ?? '').toString().toUpperCase();
+          const riskLevel = status === 'DANGER' ? 'DANGER' : status === 'WARNING' ? 'WARNING' : status === 'CAUTION' ? 'CAUTION' : 'SAFE';
+          return {
+            id: `GU-${String(idx + 1).padStart(3, '0')}`,
+            name: item.guName ?? item.gu_name ?? item.gu ?? '알수없음',
+            district: item.guName ?? item.gu_name ?? item.gu ?? '알수없음',
+            latitude: coords.lat,
+            longitude: coords.lng,
+            riskScore,
+            riskLevel,
+            reasons: [],
+            metrics: {
+              rainfallMm: Math.round((item.rainfall ?? 0) * 100) / 100,
+              sewerLevelM: Math.round(avgLevel * 100) / 100,
+              sewerCapacityRate: Math.max(0, Math.min(100, capacityRate)),
+            },
+          } as RiskZone;
+        }
+
+        // Decide which zone to display
+        let chosen: RiskZone | null = null;
+
+        if (guParam) {
+          chosen = (zonesRes as RiskZone[]).find((z) => z.name === guParam || z.district === guParam) ?? null;
+          if (!chosen) {
+            const sewerGu = await getSewerGuRisks().catch(() => [] as any[]);
+            const matched = sewerGu.find((s: any) => s.guName === guParam || s.gu_name === guParam || s.gu === guParam);
+            if (matched) chosen = mapSewerGuToZone(matched, 0);
+          }
+        } else {
+          const sewerGu = await getSewerGuRisks().catch(() => [] as any[]);
+          if (sewerGu && sewerGu.length > 0) {
+            const top = [...sewerGu].sort((a, b) => (b.totalRisk ?? 0) - (a.totalRisk ?? 0))[0];
+            chosen = (zonesRes as RiskZone[]).find((z) => z.name === top.guName || z.district === top.guName) ?? mapSewerGuToZone(top, 0);
+          } else {
+            // fallback to predict-based top
+            const sorted = [...(zonesRes as RiskZone[])].sort((a, b) => b.riskScore - a.riskScore);
+            chosen = sorted[0] ?? null;
+          }
+        }
+
+        setSelectedZone(chosen);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [searchParams]);
 
   if (loading) {
     return (
@@ -69,7 +140,7 @@ export default function HighestRiskAreaDetailPage() {
     );
   }
 
-  if (!summary || riskZones.length === 0) {
+  if (!summary || !selectedZone) {
     return (
       <DashboardLayout header={<Header summary={summary} showBackButton />}>
         <div className="flex items-center justify-center h-[60vh] text-slate-400 text-sm">
@@ -79,8 +150,7 @@ export default function HighestRiskAreaDetailPage() {
     );
   }
 
-  const sortedZones = [...riskZones].sort((a, b) => b.riskScore - a.riskScore);
-  const topZone = sortedZones[0];
+  const topZone = selectedZone as RiskZone;
   const districtFloodCount = getFloodCountForDistrict(floodHistory, topZone.district);
 
   const riskCauses = [

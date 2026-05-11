@@ -78,7 +78,7 @@ export default function KpiGrid({ summary }: KpiGridProps) {
         highlight={summary.highestRiskLevel === 'DANGER'}
         iconBg="bg-red-600"
         accentColor="border-l-red-500"
-        to="/highest-risk-area"
+        to={`/highest-risk-area?gu=${encodeURIComponent(summary.highestRiskArea)}`}
         badge={<StatusBadge level={summary.highestRiskLevel} size="sm" pulse />}
         icon={
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
