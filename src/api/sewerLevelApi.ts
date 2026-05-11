@@ -37,12 +37,17 @@ interface SewerPipeGuRow {
   max_water_level?: number;
   occupancy_ratio?: number;
   water_risk?: number;
+  rainfall?: number;
+  rain_risk?: number;
   infra_score?: number;
+  pump_score?: number;
   total_risk?: number;
   status?: string;
   overflow_risk?: boolean;
   station_count?: number;
   max_capacity?: number;
+  pump_count?: number;
+  pump_capacity?: number;
   facility_capacity?: number;
 }
 
@@ -54,7 +59,9 @@ function mapGuRiskRow(row: SewerPipeGuRow): SewerGuRiskItem | null {
   const ratioFromMax = (maxWaterLevel / maxCapacity) * 100;
   const waterRisk = Math.min(row.water_risk ?? row.occupancy_ratio ?? ratioFromMax, 100);
   const infraScore = Math.max(0, Math.min(100, row.infra_score ?? 0));
-  const totalRiskRaw = row.total_risk ?? (waterRisk - (0.3 * infraScore));
+  const rainRisk = Math.max(0, Math.min(100, row.rain_risk ?? 0));
+  const pumpScore = Math.max(0, Math.min(100, row.pump_score ?? 0));
+  const totalRiskRaw = row.total_risk ?? ((0.5 * waterRisk) + (0.2 * rainRisk) - (0.15 * infraScore) - (0.15 * pumpScore));
   const totalRisk = Math.max(0, Math.min(100, totalRiskRaw));
   const normalizedStatus = normalizeGuStatus(row.status, totalRisk);
   return {
@@ -64,8 +71,13 @@ function mapGuRiskRow(row: SewerPipeGuRow): SewerGuRiskItem | null {
     stationCount: row.station_count ?? 0,
     maxCapacity,
     waterRisk: Math.round(waterRisk * 10) / 10,
+    rainRisk: Math.round(rainRisk * 10) / 10,
     infraScore: Math.round(infraScore * 10) / 10,
+    pumpScore: Math.round(pumpScore * 10) / 10,
     totalRisk: Math.round(totalRisk * 10) / 10,
+    rainfall: Math.round((row.rainfall ?? 0) * 100) / 100,
+    pumpCount: row.pump_count ?? 0,
+    pumpCapacity: Math.round((row.pump_capacity ?? 0) * 100) / 100,
     facilityCapacity: Math.round((row.facility_capacity ?? 0) * 100) / 100,
     status: normalizedStatus,
   };

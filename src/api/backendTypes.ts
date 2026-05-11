@@ -13,11 +13,16 @@ export interface SewerPipeGuItem {
   pipe_level_max: number;
   occupancy_ratio: number;
   water_risk: number;
+  rainfall: number;
+  rain_risk: number;
   infra_score: number;
+  pump_score: number;
   total_risk: number;
   status: string;
   overflow_risk: boolean;
   station_count: number;
+  pump_count: number;
+  pump_capacity: number;
   facility_capacity: number;
 }
 

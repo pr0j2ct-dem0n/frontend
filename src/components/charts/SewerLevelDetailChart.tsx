@@ -63,7 +63,9 @@ export default function SewerLevelDetailChart({ data }: SewerLevelDetailChartPro
               `평균 수위: ${row.avgWaterLevel.toFixed(2)}m`,
               `최대 수위: ${row.maxWaterLevel.toFixed(2)}m`,
               `수위 위험도: ${row.waterRisk.toFixed(1)}%`,
+              `강우 위험도: ${row.rainRisk.toFixed(1)}%`,
               `인프라 안정성: +${row.infraScore.toFixed(1)}%`,
+              `펌프장 대응력: +${row.pumpScore.toFixed(1)}%`,
               `종합 위험도: ${row.totalRisk.toFixed(1)}%`,
               `상태: ${row.status}`,
             ];

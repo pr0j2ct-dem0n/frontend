@@ -22,20 +22,18 @@ import RiskTrendChart from '../components/charts/RiskTrendChart';
 const REFRESH_INTERVAL_MS = 60_000;
 
 const SEOUL_DATA_SOURCES = [
-  { name: '서울시 하천 수위 현황',     purpose: '하천 수위, 침수수위, 통제수위 기반 위험 보조 판단' },
-  { name: '서울시 하수관로 수위 현황', purpose: '하수관 수위, 수위 상승률, 통신상태 기반 막힘·역류 위험 판단' },
-  { name: '서울시 강우량 정보',        purpose: '10분 단위 강우량 및 단기 강우 증가율 분석' },
-  { name: '서울시 강수량 현황 정보',   purpose: '지역별·기간별 강수 패턴 참고 및 위험도 보조 분석' },
-  { name: '서울시 침수흔적도',         purpose: '과거 침수 발생 이력 기반 취약지역 가중치 산정' },
+  { name: '서울시 하수관로 수위 현황', purpose: '실시간 수위 기반 현재 위험 상태 판단' },
+  { name: '서울시 tsRainfallData', purpose: '강우 증가 추세 기반 위험 상승 분석' },
+  { name: '서울시 rainPump', purpose: '빗물펌프장 배수 대응 능력 반영' },
+  { name: '환경공단 공공하수처리시설 현황', purpose: '처리 인프라 여유율 기반 대응 능력 보정' },
 ];
 
 const RISK_FACTORS = [
-  '최근 강우량 (10분/30분/1시간)',
-  '하수관 수위 및 수위 상승률',
-  '하수도 용량 대비 수위 비율',
-  '과거 침수이력 가중치',
-  '하수도 시설 노후도 정보',
-  'AI 위험 예측 점수',
+  '하수관 최대 수위 기반 water_risk',
+  '실시간 강우량 기반 rain_risk',
+  '공공하수처리시설 안정성(infra_score)',
+  '빗물펌프장 대응력(pump_score)',
+  '종합 위험도(total_risk) 기준 상태 판정',
 ];
 
 function SectionTitle({ children }: { children: ReactNode }) {
@@ -232,10 +230,10 @@ export default function DashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span>
-                본 위험도는 강우량, 하수관 수위, 하천 수위, 과거 침수이력 등 실시간 데이터를 AI 모델로 종합 분석하여 표시됩니다.
+                본 위험도는 실시간 하수관 수위, 강우량, 공공하수처리시설, 빗물펌프장 데이터를 종합 분석하여 표시됩니다.
                 <span className="text-slate-400 ml-1.5">※ 위험도 계산은 백엔드에서 수행하며, 프론트엔드는 결과를 시각화합니다.</span>
               </span>
-              <span className="ml-auto text-slate-400 whitespace-nowrap">위험도 산정 알고리즘 ver 1.1 · 갱신주기 1분</span>
+              <span className="ml-auto text-slate-400 whitespace-nowrap">위험도 산정 알고리즘 ver 1.2 · 갱신주기 1분</span>
             </div>
           </div>
         </div>

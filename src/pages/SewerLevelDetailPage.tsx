@@ -63,6 +63,8 @@ export default function SewerLevelDetailPage() {
   const avgRiseRate = sensors.length > 0 ? sensors.reduce((s, x) => s + x.levelChangeRate, 0) / sensors.length : 0;
   const riskyGuCount = guRiskTop10.filter((g) => g.status === 'WARNING' || g.status === 'DANGER').length;
   const strongInfraGuCount = guRiskTop10.filter((g) => g.infraScore >= 70 && g.totalRisk <= 50).length;
+  const weakInfraGuCount = guRiskTop10.filter((g) => g.infraScore < 30 && g.totalRisk >= 50).length;
+  const topRainGu = guRiskTop10.length > 0 ? [...guRiskTop10].sort((a, b) => b.rainfall - a.rainfall)[0] : null;
 
   return (
     <DashboardLayout header={<Header summary={summary} showBackButton />}>
@@ -137,6 +139,19 @@ export default function SewerLevelDetailPage() {
             }
           />
           <DetailSummaryCard
+            title="실시간 강우 집중 지역"
+            value={topRainGu ? topRainGu.guName : '-'}
+            unit=""
+            sub={topRainGu ? `평균 강우 ${topRainGu.rainfall.toFixed(1)}mm/h` : '강우 데이터 없음'}
+            iconBg="bg-blue-700"
+            accentColor="border-l-blue-500"
+            icon={
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+              </svg>
+            }
+          />
+          <DetailSummaryCard
             title="배수 대응 우수 지역"
             value={strongInfraGuCount}
             unit="개 구"
@@ -146,6 +161,20 @@ export default function SewerLevelDetailPage() {
             icon={
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            }
+          />
+          <DetailSummaryCard
+            title="처리 인프라 부족 지역"
+            value={weakInfraGuCount}
+            unit="개 구"
+            sub="TOP10 기준 인프라 30↓ · 종합위험 50↑"
+            iconBg="bg-amber-600"
+            accentColor="border-l-amber-500"
+            highlight={weakInfraGuCount >= 2}
+            icon={
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
               </svg>
             }
           />

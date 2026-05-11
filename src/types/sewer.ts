@@ -31,8 +31,13 @@ export interface SewerGuRiskItem {
   stationCount: number;
   maxCapacity: number;
   waterRisk: number;
+  rainRisk: number;
   infraScore: number;
+  pumpScore: number;
   totalRisk: number;
   status: 'NORMAL' | 'CAUTION' | 'WARNING' | 'DANGER';
+  rainfall: number;
+  pumpCount: number;
+  pumpCapacity: number;
   facilityCapacity: number;
 }
