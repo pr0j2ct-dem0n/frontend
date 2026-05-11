@@ -36,10 +36,14 @@ interface SewerPipeGuRow {
   pipe_level_max?: number;
   max_water_level?: number;
   occupancy_ratio?: number;
+  water_risk?: number;
+  infra_score?: number;
+  total_risk?: number;
   status?: string;
   overflow_risk?: boolean;
   station_count?: number;
   max_capacity?: number;
+  facility_capacity?: number;
 }
 
 function mapGuRiskRow(row: SewerPipeGuRow): SewerGuRiskItem | null {
@@ -48,15 +52,21 @@ function mapGuRiskRow(row: SewerPipeGuRow): SewerGuRiskItem | null {
   if (maxWaterLevel < 0) return null;
   const maxCapacity = row.max_capacity ?? MAX_CAPACITY_M;
   const ratioFromMax = (maxWaterLevel / maxCapacity) * 100;
-  const riskPercent = Math.min(row.occupancy_ratio ?? ratioFromMax, 100);
-  const normalizedStatus = normalizeGuStatus(row.status, riskPercent);
+  const waterRisk = Math.min(row.water_risk ?? row.occupancy_ratio ?? ratioFromMax, 100);
+  const infraScore = Math.max(0, Math.min(100, row.infra_score ?? 0));
+  const totalRiskRaw = row.total_risk ?? (waterRisk - (0.3 * infraScore));
+  const totalRisk = Math.max(0, Math.min(100, totalRiskRaw));
+  const normalizedStatus = normalizeGuStatus(row.status, totalRisk);
   return {
     guName: row.gu ?? row.gu_name ?? '알수없음',
     avgWaterLevel: Math.round(avgWaterLevel * 100) / 100,
     maxWaterLevel: Math.round(maxWaterLevel * 100) / 100,
     stationCount: row.station_count ?? 0,
     maxCapacity,
-    riskPercent: Math.round(riskPercent * 10) / 10,
+    waterRisk: Math.round(waterRisk * 10) / 10,
+    infraScore: Math.round(infraScore * 10) / 10,
+    totalRisk: Math.round(totalRisk * 10) / 10,
+    facilityCapacity: Math.round((row.facility_capacity ?? 0) * 100) / 100,
     status: normalizedStatus,
   };
 }
@@ -195,7 +205,7 @@ export async function getAverageSewerLevelM(): Promise<number> {
 
 export async function getSewerGuRiskTop10(): Promise<SewerGuRiskItem[]> {
   const all = await getSewerGuRisks();
-  return [...all].sort((a, b) => b.riskPercent - a.riskPercent).slice(0, 10);
+  return [...all].sort((a, b) => b.totalRisk - a.totalRisk).slice(0, 10);
 }
 
 export async function getSewerGuRisks(): Promise<SewerGuRiskItem[]> {

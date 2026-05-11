@@ -12,9 +12,13 @@ export interface SewerPipeGuItem {
   pipe_level_avg: number;
   pipe_level_max: number;
   occupancy_ratio: number;
+  water_risk: number;
+  infra_score: number;
+  total_risk: number;
   status: string;
   overflow_risk: boolean;
   station_count: number;
+  facility_capacity: number;
 }
 
 /** /predict/flood/areas */

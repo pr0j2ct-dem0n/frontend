@@ -12,7 +12,7 @@ const GRID_COLOR = 'rgba(148, 163, 184, 0.2)';
 const TICK_COLOR = '#94a3b8';
 
 export default function SewerLevelDetailChart({ data }: SewerLevelDetailChartProps) {
-  const sorted = [...data].sort((a, b) => b.riskPercent - a.riskPercent);
+  const sorted = [...data].sort((a, b) => b.totalRisk - a.totalRisk);
   const formatGuName = (name: string) => (name.endsWith('구') ? name : `${name}구`);
 
   const STATUS_COLOR: Record<SewerGuRiskItem['status'], string> = {
@@ -28,7 +28,7 @@ export default function SewerLevelDetailChart({ data }: SewerLevelDetailChartPro
     datasets: [
       {
         label: '침수 위험도 (%)',
-        data: sorted.map((s) => s.riskPercent),
+        data: sorted.map((s) => s.totalRisk),
         backgroundColor: barColors,
         borderColor: barColors,
         borderWidth: 1,
@@ -62,7 +62,9 @@ export default function SewerLevelDetailChart({ data }: SewerLevelDetailChartPro
             return [
               `평균 수위: ${row.avgWaterLevel.toFixed(2)}m`,
               `최대 수위: ${row.maxWaterLevel.toFixed(2)}m`,
-              `위험도: ${row.riskPercent.toFixed(1)}%`,
+              `수위 위험도: ${row.waterRisk.toFixed(1)}%`,
+              `인프라 안정성: +${row.infraScore.toFixed(1)}%`,
+              `종합 위험도: ${row.totalRisk.toFixed(1)}%`,
               `상태: ${row.status}`,
             ];
           },
@@ -88,7 +90,7 @@ export default function SewerLevelDetailChart({ data }: SewerLevelDetailChartPro
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
       <h3 className="text-slate-700 text-sm font-semibold mb-3 flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-orange-500" />
-        자치구별 침수 위험도 TOP 10
+        자치구별 종합 침수 대응 위험도 TOP 10
       </h3>
       <div style={{ height: '240px' }}>
         <Bar data={chartData} options={options} />

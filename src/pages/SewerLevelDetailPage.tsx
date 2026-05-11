@@ -62,6 +62,7 @@ export default function SewerLevelDetailPage() {
   const maxSensor = sensors.length > 0 ? [...sensors].sort((a, b) => b.waterLevelM - a.waterLevelM)[0] : null;
   const avgRiseRate = sensors.length > 0 ? sensors.reduce((s, x) => s + x.levelChangeRate, 0) / sensors.length : 0;
   const riskyGuCount = guRiskTop10.filter((g) => g.status === 'WARNING' || g.status === 'DANGER').length;
+  const strongInfraGuCount = guRiskTop10.filter((g) => g.infraScore >= 70 && g.totalRisk <= 50).length;
 
   return (
     <DashboardLayout header={<Header summary={summary} showBackButton />}>
@@ -79,7 +80,7 @@ export default function SewerLevelDetailPage() {
           }
         />
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <DetailSummaryCard
             title="평균 하수관 수위"
             value={latestTimeseriesAvg.toFixed(2)}
@@ -132,6 +133,19 @@ export default function SewerLevelDetailPage() {
             icon={
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636a9 9 0 010 12.728m-3.536-3.536a4 4 0 010-5.656M9.172 16.172a4 4 0 010-5.656m-3.536 3.536a9 9 0 010-12.728" />
+              </svg>
+            }
+          />
+          <DetailSummaryCard
+            title="배수 대응 우수 지역"
+            value={strongInfraGuCount}
+            unit="개 구"
+            sub="TOP10 기준 인프라 70↑ · 종합위험 50↓"
+            iconBg="bg-emerald-600"
+            accentColor="border-l-emerald-500"
+            icon={
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             }
           />

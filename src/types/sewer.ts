@@ -30,6 +30,9 @@ export interface SewerGuRiskItem {
   maxWaterLevel: number;
   stationCount: number;
   maxCapacity: number;
-  riskPercent: number;
+  waterRisk: number;
+  infraScore: number;
+  totalRisk: number;
   status: 'NORMAL' | 'CAUTION' | 'WARNING' | 'DANGER';
+  facilityCapacity: number;
 }
